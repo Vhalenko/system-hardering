@@ -1,8 +1,9 @@
 <?php
 
 require_once(__DIR__ . "/../models/ComicModel.php");
+require_once(__DIR__ . "/BaseController.php");
 
-class ComicController
+class ComicController extends BaseController
 {
     private $comicModel;
     public function __construct()
@@ -12,6 +13,7 @@ class ComicController
 
     public function getAllComics(): array
     {
+        $this->requireAuth();
         $comics = $this->comicModel->getAllComics();
         return ['success' => true, 'comics' => $comics];
     }
@@ -23,6 +25,7 @@ class ComicController
 
     public function addComic(): array
     {
+        $this->requireRole('admin', 'super_admin');
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
 
         $serie  = trim($body['serie']  ?? '');
@@ -52,6 +55,7 @@ class ComicController
 
     public function updateComic(int $id): array
     {
+        $this->requireRole('admin', 'super_admin');
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
 
         $serie  = trim($body['serie']  ?? '');
@@ -85,6 +89,7 @@ class ComicController
 
     public function deleteComic(int $id): array
     {
+        $this->requireRole('admin', 'super_admin');
         if (!$this->comicModel->getComicById($id)) {
             http_response_code(404);
             return ['success' => false, 'message' => 'Comic not found'];

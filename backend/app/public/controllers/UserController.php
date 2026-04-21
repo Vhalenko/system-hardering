@@ -1,8 +1,9 @@
 <?php
 
 require_once(__DIR__ . "/../models/UserModel.php");
+require_once(__DIR__ . "/BaseController.php");
 
-class UserController
+class UserController extends BaseController
 {
     private $userModel;
     public function __construct()
@@ -29,16 +30,17 @@ class UserController
             return ['success' => false, 'message' => 'Invalid email or password'];
         }
 
-        // ← session_start() removed, index.php already handles this
-        $_SESSION['user'] = [
+        $userData = [
             'id'    => $user['id'],
             'name'  => $user['name'],
             'email' => $user['email'],
             'role'  => $user['role'],
         ];
 
+        $token = JwtHelper::generate($userData);
+
         http_response_code(200);
-        return ['success' => true, 'user' => $_SESSION['user']];
+        return ['success' => true, 'token' => $token, 'user' => $userData];
     }
 
     public function logout(): array
@@ -50,12 +52,14 @@ class UserController
 
     public function getAllUsers(): array
     {
+        $this->requireRole('admin', 'super_admin');
         $users = $this->userModel->getAllUsers();
         return ['success' => true, 'users' => $users];
     }
 
     public function createUser(): array
     {
+        $this->requireRole('admin', 'super_admin');
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
 
         $name     = trim($body['name']     ?? '');
